@@ -478,7 +478,29 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    # if there is no food left, return 0
+    if foodGrid.count() == 0:
+        return 0
+    food_list = foodGrid.asList()  # get the list of food
+    walls = problem.walls  # get the walls
+    distance = {position: 0}  # initialize the distance
+    visited = {position}  # initialize the visited
+    queue = util.Queue()  # initialize the queue
+    queue.push(position)  # push the start position into the queue
+    while not queue.isEmpty():
+        # pop the top of the queue
+        current_position = queue.pop()
+        # if the current position is food, return the distance
+        for successor in [(current_position[0] + 1, current_position[1]),
+                          (current_position[0] - 1, current_position[1]),
+                          (current_position[0], current_position[1] + 1),
+                          (current_position[0], current_position[1] - 1)]:
+            # if the successor is not visited and not wall
+            if successor not in visited and not walls[successor[0]][successor[1]]:
+                distance[successor] = distance[current_position] + 1
+                visited.add(successor)
+                queue.push(successor)
+    return max([distance[food] for food in food_list])
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
