@@ -13,7 +13,7 @@
 
 
 from util import manhattanDistance
-from game import Directions
+from game import Directions, Actions
 import random, util
 
 from game import Agent
@@ -291,7 +291,57 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    infinity = float('inf')
+    pacman_position = currentGameState.getPacmanPosition()
+    score = currentGameState.getScore()
+    ghost_states = currentGameState.getGhostStates()
+    food_list = currentGameState.getFood().asList()
+    capsule_list = currentGameState.getCapsules()
+
+    if currentGameState.isWin():
+        return infinity
+    if currentGameState.isLose():
+        return -infinity
+
+    for ghost in ghost_states:
+        distance = manhattanDistance(pacman_position, ghost.getPosition())
+        if ghost.scaredTimer > 6 and distance < 2:
+            return infinity
+        elif ghost.scaredTimer < 5 and distance < 2:
+            return -infinity
+
+    food_distance = 1.0/closests_item_distance(currentGameState, food_list)
+
+    capsule_distance = closests_item_distance(currentGameState, capsule_list)
+    capsule_distance = 0.0 if capsule_distance is None else 1.0/capsule_distance
+
+    return score + 10*food_distance + capsule_distance
+
+
+def closests_item_distance(current_game_state: GameState, food_list):
+    walls = current_game_state.getWalls()
+    start = current_game_state.getPacmanPosition()
+
+    distance = {start: 0}
+    visited = {start}
+
+    queue = util.Queue()
+    queue.push(start)
+
+    while not queue.isEmpty():
+        position = x, y = queue.pop()
+        if position in food_list:
+            return distance[position]
+        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+            dx, dy = Actions.directionToVector(action)
+            next_position = nextx, nexty = int(x + dx), int(y + dy)
+
+            if not walls[nextx][nexty] and next_position not in visited:
+                queue.push(next_position)
+                visited.add(next_position)
+                # a new position is always 1 step away from its previous position
+                distance[next_position] = distance[position] + 1
+
 
 # Abbreviation
 better = betterEvaluationFunction
