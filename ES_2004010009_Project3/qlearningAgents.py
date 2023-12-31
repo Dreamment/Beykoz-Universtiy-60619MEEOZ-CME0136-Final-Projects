@@ -43,6 +43,7 @@ class QLearningAgent(ReinforcementAgent):
         ReinforcementAgent.__init__(self, **args)
 
         "*** YOUR CODE HERE ***"
+        self.q_values = {}
 
     def getQValue(self, state, action):
         """
@@ -51,8 +52,7 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        return self.q_values[state][action] if state in self.q_values else 0
 
     def computeValueFromQValues(self, state):
         """
@@ -62,7 +62,8 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        values = [self.getQValue(state, action) for action in self.getLegalActions(state)]
+        return max(values) if values else 0
 
     def computeActionFromQValues(self, state):
         """
@@ -71,7 +72,12 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        best_q_value = self.computeValueFromQValues(state)
+        best_actions = []
+        for action in self.getLegalActions(state):
+            if self.getQValue(state, action) == best_q_value:
+                best_actions.append(action)
+        return random.choice(best_actions) if best_actions else None
 
     def getAction(self, state):
         """
@@ -102,7 +108,13 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if state not in self.q_values:
+            self.q_values[state] = util.Counter()
+
+        old_value = self.q_values[state][action]
+        sample = reward + self.discount*self.computeValueFromQValues(nextState)
+        new_value = (1-self.alpha)*old_value + self.alpha*sample
+        self.q_values[state][action] = new_value
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
