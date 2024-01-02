@@ -490,7 +490,6 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     while not queue.isEmpty():
         # pop the top of the queue
         current_position = queue.pop()
-        # if the current position is food, return the distance
         for successor in [(current_position[0] + 1, current_position[1]),
                           (current_position[0] - 1, current_position[1]),
                           (current_position[0], current_position[1] + 1),
