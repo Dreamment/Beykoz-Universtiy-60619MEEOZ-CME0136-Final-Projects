@@ -208,6 +208,19 @@ class LanguageIDModel(object):
 
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.hidden_size = 100
+        self.w1 = nn.Parameter(self.num_chars, self.hidden_size)
+        self.b1 = nn.Parameter(1, self.hidden_size)
+        self.w2 = nn.Parameter(self.hidden_size, self.hidden_size)
+        self.b2 = nn.Parameter(1, self.hidden_size)
+        self.w1_hidden = nn.Parameter(self.hidden_size, self.hidden_size)
+        self.b1_hidden = nn.Parameter(1, self.hidden_size)
+        self.w2_hidden = nn.Parameter(self.hidden_size, self.hidden_size)
+        self.b2_hidden = nn.Parameter(1, self.hidden_size)
+        self.w_final = nn.Parameter(self.hidden_size, 5)
+        self.b_final = nn.Parameter(1, 5)
+        self.learning_rate = 0.15
+        self.batch_size = 60
 
     def run(self, xs):
         """
@@ -239,6 +252,13 @@ class LanguageIDModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        hidden = None
+        for i in range(len(xs)):
+            if i == 0:
+                hidden = nn.ReLU(nn.AddBias(nn.Linear(xs[i], self.w1), self.b1))
+            else:
+                hidden = nn.ReLU(nn.AddBias(nn.Add(nn.Linear(xs[i], self.w1), nn.Linear(hidden, self.w2)), self.b2))
+        return nn.AddBias(nn.Linear(hidden, self.w_final), self.b_final)
 
     def get_loss(self, xs, y):
         """
@@ -255,9 +275,32 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                (grad_w1, grad_b1, grad_w2, grad_b2,
+                    grad_w1_hidden, grad_b1_hidden, grad_w2_hidden, grad_b2_hidden,
+                    grad_w_final, grad_b_final) = (
+                    nn.gradients(loss,
+                                 [self.w1, self.b1, self.w2, self.b2,
+                                  self.w1_hidden, self.b1_hidden, self.w2_hidden, self.b2_hidden,
+                                  self.w_final, self.b_final]))
+                self.w1.update(grad_w1, -self.learning_rate)
+                self.b1.update(grad_b1, -self.learning_rate)
+                self.w2.update(grad_w2, -self.learning_rate)
+                self.b2.update(grad_b2, -self.learning_rate)
+                self.w1_hidden.update(grad_w1_hidden, -self.learning_rate)
+                self.b1_hidden.update(grad_b1_hidden, -self.learning_rate)
+                self.w2_hidden.update(grad_w2_hidden, -self.learning_rate)
+                self.b2_hidden.update(grad_b2_hidden, -self.learning_rate)
+                self.w_final.update(grad_w_final, -self.learning_rate)
+                self.b_final.update(grad_b_final, -self.learning_rate)
+            if dataset.get_validation_accuracy() > 0.86:
+                break
