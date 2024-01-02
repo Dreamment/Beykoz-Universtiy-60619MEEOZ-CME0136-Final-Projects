@@ -56,9 +56,21 @@ class RegressionModel(object):
     numbers to real numbers. The network should be sufficiently large to be able
     to approximate sin(x) on the interval [-2pi, 2pi] to reasonable precision.
     """
+
+    # Hidden layer size 512
+    # Batch size 200
+    # Learning rate 0.05
+    # One hidden layer (2 linear layers in total)
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.hidden_size = 512
+        self.w1 = nn.Parameter(1, self.hidden_size)
+        self.b1 = nn.Parameter(1, self.hidden_size)
+        self.w2 = nn.Parameter(self.hidden_size, 1)
+        self.b2 = nn.Parameter(1, 1)
+        self.learning_rate = 0.05
+        self.batch_size = 200
 
     def run(self, x):
         """
@@ -69,7 +81,7 @@ class RegressionModel(object):
         Returns:
             A node with shape (batch_size x 1) containing predicted y-values
         """
-        "*** YOUR CODE HERE ***"
+        return nn.AddBias(nn.Linear(nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1)), self.w2), self.b2)
 
     def get_loss(self, x, y):
         """
@@ -82,12 +94,23 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                grad_w1, grad_b1, grad_w2, grad_b2 = nn.gradients(loss, [self.w1, self.b1, self.w2, self.b2])
+                self.w1.update(grad_w1, -self.learning_rate)
+                self.b1.update(grad_b1, -self.learning_rate)
+                self.w2.update(grad_w2, -self.learning_rate)
+                self.b2.update(grad_b2, -self.learning_rate)
+            if nn.as_scalar(self.get_loss(nn.Constant(dataset.x), nn.Constant(dataset.y))) < 0.02:
+                break
 
 class DigitClassificationModel(object):
     """
